@@ -1,0 +1,101 @@
+{
+  "users": [
+    {
+      "id": "u1",
+      "name": "Ava Thompson",
+      "email": "ava@predictx.ai",
+      "role": "Admin",
+      "password": "admin123",
+      "access_level": "Global",
+      "status": "Active",
+      "last_login": "2026-04-14 09:20"
+    }
+  ],
+  "machines": [
+    {
+      "id": "m-07",
+      "name": "Conveyor-07",
+      "status": "Warning",
+      "rpm": 1022,
+      "temperature": 71.0,
+      "vibration": 4.1,
+      "failure_probability": 43.0,
+      "last_maintenance": "2026-03-22",
+      "plant": "Plant A",
+      "location": "Line 4",
+      "operating_hours": 10210,
+      "model": "CNV-640"
+    }
+  ],
+  "sensors": [
+    {
+      "id": "sound",
+      "name": "Sound Sensor",
+      "unit": "dB",
+      "value": 72.0,
+      "threshold": 80.0,
+      "anomaly_count": 3,
+      "series": [63, 65, 67, 66, 70, 72, 71, 69, 73, 72]
+    },
+    {
+      "id": "vibration",
+      "name": "Vibration Sensor",
+      "unit": "mm/s",
+      "value": 4.1,
+      "threshold": 5.0,
+      "anomaly_count": 5,
+      "series": [2.7, 3.1, 3.3, 3.6, 3.8, 4.0, 4.1, 4.3, 4.2, 4.1]
+    },
+    {
+      "id": "temp",
+      "name": "Temperature Sensor",
+      "unit": "C",
+      "value": 67.0,
+      "threshold": 75.0,
+      "anomaly_count": 2,
+      "series": [59, 61, 62, 63, 64, 66, 67, 68, 67, 67]
+    }
+  ],
+  "predictions": [
+    { "label": "Bearing Wear Risk", "value": 82.0 },
+    { "label": "Overheat Risk", "value": 33.0 },
+    { "label": "Shaft Misalignment", "value": 57.0 },
+    { "label": "Motor Failure", "value": 19.0 }
+  ],
+  "alerts": [
+    {
+  ],
+  "analytics": {
+    "uptimeTrend": [97.8, 98.0, 98.1, 98.2, 98.3, 98.1, 98.2],
+    "temperatureTrend": [63, 64, 65, 66, 67, 68, 67],
+    "vibrationTrend": [2.9, 3.1, 3.3, 3.5, 3.8, 4.0, 4.1],
+    "downtimeCauses": [42, 24, 18, 16],
+    "costTrend": [18, 20, 19, 24, 22, 26, 25],
+    "sensorNoise": [5, 7, 8, 12, 18, 15, 10, 7, 4],
+    "summary": {
+      "uptime": 98.2,
+      "alerts": 2,
+      "avgTemperature": 67,
+      "failureProbability": 43
+    }
+      "id": "a-1",
+      "time": "10:18",
+      "machine": "Conveyor-07",
+      "alert_type": "Vibration Spike",
+      "severity": "Critical",
+      "sensor": "Vibration",
+      "predicted_cause": "Bearing wear acceleration",
+      "status": "Open"
+    },
+    {
+      "id": "a-2",
+      "time": "09:55",
+      "machine": "Conveyor-07",
+      "alert_type": "Overheat",
+      "severity": "High",
+      "sensor": "Temperature",
+      "predicted_cause": "Cooling valve drift",
+      "status": "Assigned"
+    }
+  ]
+}
