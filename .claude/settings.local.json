@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -m dl_model.model)",
+      "Bash(python -m dl_model.train_model)"
+    ]
+  }
+}

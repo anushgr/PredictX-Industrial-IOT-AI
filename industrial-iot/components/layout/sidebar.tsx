@@ -9,6 +9,7 @@ import {
   BarChart3,
   Gauge,
   LogOut,
+  MessageSquare,
   Settings,
   Shield,
   Users,
@@ -28,6 +29,7 @@ const navItems = [
   { href: "/machines", label: "Machines", icon: Wrench },
   { href: "/predictive-alerts", label: "Predictive Alerts", icon: AlertTriangle },
   { href: "/analytics", label: "Analytics", icon: BarChart3 },
+  { href: "/ai-assistant", label: "AI Assistant", icon: MessageSquare },
   { href: "/users", label: "Users & Roles", icon: Users },
   { href: "/settings", label: "Settings", icon: Settings },
 ];

@@ -8,11 +8,16 @@ export const api = axios.create({
 });
 
 api.interceptors.request.use((config) => {
-  if (typeof window !== "undefined") {
-    const token = localStorage.getItem("predictx_token");
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+  // Only access localStorage in browser environment
+  try {
+    if (typeof window !== "undefined" && typeof localStorage !== "undefined") {
+      const token = localStorage.getItem("predictx_token");
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
     }
+  } catch (e) {
+    // Silently fail if localStorage is not available
   }
   return config;
 });
@@ -45,4 +50,8 @@ export const authApi = {
   login: (email: string, password: string) =>
     api.post("/api/login", { email, password }),
   users: () => api.get("/api/users"),
+};
+
+export const chatApi = {
+  query: (message: string) => api.post("/api/chat/query", { message }),
 };

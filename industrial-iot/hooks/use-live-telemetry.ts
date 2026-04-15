@@ -10,9 +10,14 @@ function randomWalk(value: number, drift = 0) {
 }
 
 export function useLiveTelemetry() {
-  const [liveSensors, setLiveSensors] = useState<SensorReading[]>(sensors);
+  const [liveSensors, setLiveSensors] = useState<SensorReading[]>([]);
+  const [isHydrated, setIsHydrated] = useState(false);
 
   useEffect(() => {
+    // Initialize with mock data on first render (client-side only)
+    setLiveSensors(sensors);
+    setIsHydrated(true);
+
     let closed = false;
     let ws: WebSocket | null = null;
 
@@ -55,5 +60,6 @@ export function useLiveTelemetry() {
     };
   }, []);
 
-  return liveSensors;
+  // Return empty array during hydration to match server render
+  return isHydrated ? liveSensors : [];
 }

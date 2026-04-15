@@ -1,19 +1,20 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter
 
-from app.dependencies import get_current_user
-from app.services.mock_data import get_alert_records, get_failure_predictions, get_predicted_alerts
+from app.services.predictions_db import get_predictions_from_db, get_alerts_from_db
 
 router = APIRouter()
 
 
 @router.get("/predict/failure")
-def predict_failure(_: dict = Depends(get_current_user)) -> list[dict]:
-    return get_failure_predictions()
+def predict_failure() -> dict:
+    return get_predictions_from_db()
 
 
 @router.get("/predict/alerts")
-def predict_alerts(_: dict = Depends(get_current_user)) -> dict:
+def predict_alerts() -> dict:
+    predictions = get_predictions_from_db()
+    alerts = get_alerts_from_db()
     return {
-        "predictions": get_predicted_alerts(),
-        "activeAlerts": get_alert_records(),
+        "predictions": predictions.get("predictions", []),
+        "activeAlerts": alerts.get("activeAlerts", []),
     }

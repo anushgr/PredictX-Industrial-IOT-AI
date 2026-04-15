@@ -1,0 +1,12 @@
+Comprehensive details and statistics for your cluster
+
+url
+805bdf7166664409a14daa5bf806ef48.s1.eu.hivemq.cloud
+port
+8883
+websocket port
+8884
+tls mqtt url
+805bdf7166664409a14daa5bf806ef48.s1.eu.hivemq.cloud:8883
+tls websocket url
+805bdf7166664409a14daa5bf806ef48.s1.eu.hivemq.cloud:8884/mqtt

@@ -1,13 +1,12 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, HTTPException
 
-from app.dependencies import get_current_user
 from app.services.mock_data import get_machine_by_id, get_machines
 
 router = APIRouter()
 
 
 @router.get("/machines")
-def list_machines(_: dict = Depends(get_current_user)) -> list[dict]:
+def list_machines() -> list[dict]:
     return [
         {
             "id": machine["id"],
@@ -24,7 +23,7 @@ def list_machines(_: dict = Depends(get_current_user)) -> list[dict]:
 
 
 @router.get("/machines/{machine_id}")
-def machine_detail(machine_id: str, _: dict = Depends(get_current_user)) -> dict:
+def machine_detail(machine_id: str) -> dict:
     machine = get_machine_by_id(machine_id)
     if not machine:
         raise HTTPException(status_code=404, detail="Machine not found")
