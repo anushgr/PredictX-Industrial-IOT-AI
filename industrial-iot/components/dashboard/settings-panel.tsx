@@ -25,7 +25,9 @@ export function SettingsPanel() {
         </TabsContent>
 
         <TabsContent value="alerts" className="mt-4 space-y-4">
-          <Input placeholder="Temperature threshold" defaultValue="75" />
+          <Input placeholder="Temperature threshold" defaultValue="30" />
+          <Input placeholder="Vibration threshold" defaultValue="10" />
+          <Input placeholder="Sound threshold" defaultValue="4" />
           <div className="flex items-center justify-between rounded-xl border border-slate-800 p-3">
             <p className="text-sm text-slate-300">SMS Alerts</p>
             <Switch defaultChecked />

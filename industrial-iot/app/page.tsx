@@ -10,12 +10,13 @@ import { MachineCard } from "@/components/dashboard/machine-card";
 import { SensorCard } from "@/components/dashboard/sensor-card";
 import { PredictionPanel } from "@/components/dashboard/prediction-panel";
 import { useLiveTelemetry } from "@/hooks/use-live-telemetry";
-import { useMachines, usePredictions } from "@/hooks/use-dashboard-data";
+import { useMachines, usePredictions, usePredictionSnapshot } from "@/hooks/use-dashboard-data";
 
 export default function Home() {
   const liveSensors = useLiveTelemetry();
   const { data: machines = [], isLoading: machinesLoading } = useMachines();
   const { data: predictions = [] } = usePredictions();
+  const { data: predictionSnapshot = null } = usePredictionSnapshot();
 
   const machine = machines[0];
   const topSensor = useMemo(() => {
@@ -35,7 +36,7 @@ export default function Home() {
               Conveyor-07 predictive maintenance dashboard
             </h1>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-300">
-              This view now focuses on one machine only. All live data is coming from the backend dummy JSON source and is limited to sound, vibration, and temperature telemetry.
+              This view now focuses on one machine only. All live data is coming from the backend and is limited to sound, vibration, and temperature telemetry.
             </p>
           </div>
 
@@ -80,7 +81,7 @@ export default function Home() {
           </div>
         </Card>
 
-        <PredictionPanel risks={predictions} />
+        <PredictionPanel risks={predictions} snapshot={predictionSnapshot} />
       </section>
 
       <section>
@@ -107,7 +108,7 @@ export default function Home() {
           <div>
             <p className="font-medium">Inspection recommended within 12 hours.</p>
             <p className="mt-1 text-sm text-amber-100/80">
-              The backend dummy data currently indicates a vibration-driven risk pattern on Conveyor-07.
+              The backend prediction stream currently indicates a vibration-driven risk pattern on Conveyor-07.
             </p>
           </div>
         </div>

@@ -1,7 +1,6 @@
 """
 Machine predictions service.
 Returns ML model predictions for failure risk, anomalies, and recommended actions.
-Uses dummy fallback data until real DL model output is available.
 """
 
 from __future__ import annotations
@@ -12,15 +11,54 @@ from datetime import datetime, timezone
 import psycopg2
 
 from app.core.config import settings
+from app.services.predictor_runtime import predictor_runtime_service
 
 logger = logging.getLogger(__name__)
 
 
+def _format_realtime_prediction(prediction: dict) -> dict:
+    sensor_scores = prediction.get("sensor_scores", {})
+    machine_health = prediction.get("machine_health", {})
+    timestamp = prediction.get("timestamp") or datetime.now(timezone.utc).isoformat()
+
+    predictions = []
+    for sensor_name, score_data in sensor_scores.items():
+        health_pct = float(score_data.get("health_pct", 100.0))
+        prediction_score = float(score_data.get("score", 0.0))
+        classification = str(score_data.get("classification", "normal"))
+        predictions.append(
+            {
+                "sensor": sensor_name,
+                "predictionScore": prediction_score,
+                "anomalyFlag": classification in {"warning", "critical"},
+                "failureProbability": int(max(0, min(100, round(100.0 - health_pct)))),
+                "recommendedAction": machine_health.get("recommendation", "Monitor machine condition."),
+                "timestamp": timestamp,
+                "classification": classification,
+                "healthPct": health_pct,
+                "confidence": float(score_data.get("confidence", 0.0)),
+            },
+        )
+
+    return {
+        "machine_id": prediction.get("machine_id", "unknown"),
+        "timestamp": timestamp,
+        "sensor_scores": sensor_scores,
+        "machine_health": machine_health,
+        "predictions": predictions,
+        "source": "realtime-model",
+    }
+
+
 def get_predictions_from_db() -> dict:
-    """Query predictions from DB or return dummy data."""
+    """Query predictions from DB or return empty data."""
+    latest_prediction = predictor_runtime_service.get_latest_prediction("conveyor-07")
+    if latest_prediction:
+        return _format_realtime_prediction(latest_prediction)
+
     if not settings.database_url:
-        logger.info("DATABASE_URL not set, returning dummy predictions")
-        return get_dummy_predictions()
+        logger.info("DATABASE_URL not set, returning no predictions")
+        return {"predictions": [], "source": "empty"}
 
     try:
         with psycopg2.connect(settings.database_url, sslmode="require") as connection:
@@ -56,54 +94,27 @@ def get_predictions_from_db() -> dict:
                             }
                             for row in rows
                         ],
+                        "machine_id": "conveyor-07",
+                        "sensor_scores": {},
+                        "machine_health": {},
                         "source": "database",
                     }
                     return predictions
                 else:
-                    logger.info("No predictions in DB, returning dummy data")
-                    return get_dummy_predictions()
+                    logger.info("No predictions in DB, returning empty predictions")
+                    return {"predictions": [], "machine_id": "conveyor-07", "sensor_scores": {}, "machine_health": {}, "source": "empty"}
 
     except Exception as exc:
         logger.error(f"Failed to query predictions from DB: {exc}")
-        return get_dummy_predictions()
-
-
-def get_dummy_predictions() -> dict:
-    """Fallback dummy ML predictions."""
-    return {
-        "predictions": [
-            {
-                "sensor": "vibration",
-                "predictionScore": 0.72,
-                "anomalyFlag": True,
-                "failureProbability": 72,
-                "recommendedAction": "Bearing inspection within 24 hours",
-                "timestamp": datetime.now(timezone.utc).isoformat(),
-            },
-            {
-                "sensor": "temperature",
-                "predictionScore": 0.35,
-                "anomalyFlag": False,
-                "failureProbability": 35,
-                "recommendedAction": "Normal operation, monitor thermal trends",
-                "timestamp": datetime.now(timezone.utc).isoformat(),
-            },
-            {
-                "sensor": "sound",
-                "predictionScore": 0.28,
-                "anomalyFlag": False,
-                "failureProbability": 28,
-                "recommendedAction": "Continue normal operation",
-                "timestamp": datetime.now(timezone.utc).isoformat(),
-            },
-        ],
-        "source": "dummy",
-    }
+        return {"predictions": [], "source": "empty"}
 
 
 def get_alerts_from_db() -> dict:
     """Get predictive alerts/anomalies."""
     predictions = get_predictions_from_db()
+
+    if not predictions.get("predictions"):
+        return {"activeAlerts": []}
     
     active_alerts = [
         {

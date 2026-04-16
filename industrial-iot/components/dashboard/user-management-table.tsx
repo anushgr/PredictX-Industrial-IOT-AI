@@ -75,31 +75,39 @@ export function UserManagementTable({ rows }: { rows: UserRecord[] }) {
             </tr>
           </thead>
           <tbody>
-            {filtered.map((row) => (
-              <tr key={row.id} className="border-b border-slate-900/80 hover:bg-slate-900/50">
-                <td className="px-2 py-3 text-slate-200">{row.name}</td>
-                <td className="px-2 py-3 text-slate-300">{row.email}</td>
-                <td className="px-2 py-3 text-slate-300">{row.role}</td>
-                <td className="px-2 py-3 text-slate-300">{row.lastLogin}</td>
-                <td className="px-2 py-3 text-slate-300">{row.accessLevel}</td>
-                <td className="px-2 py-3">
-                  <Badge
-                    className={
-                      row.status === "Active"
-                        ? "border-emerald-500/40 bg-emerald-500/15 text-emerald-300"
-                        : row.status === "Invited"
-                          ? "border-amber-500/40 bg-amber-500/15 text-amber-300"
-                          : "border-red-500/40 bg-red-500/15 text-red-300"
-                    }
-                  >
-                    {row.status}
-                  </Badge>
-                </td>
-                <td className="px-2 py-3">
-                  <UserDialog triggerLabel="Edit" defaultUser={row} />
+            {filtered.length > 0 ? (
+              filtered.map((row) => (
+                <tr key={row.id} className="border-b border-slate-900/80 hover:bg-slate-900/50">
+                  <td className="px-2 py-3 text-slate-200">{row.name}</td>
+                  <td className="px-2 py-3 text-slate-300">{row.email}</td>
+                  <td className="px-2 py-3 text-slate-300">{row.role}</td>
+                  <td className="px-2 py-3 text-slate-300">{row.lastLogin}</td>
+                  <td className="px-2 py-3 text-slate-300">{row.accessLevel}</td>
+                  <td className="px-2 py-3">
+                    <Badge
+                      className={
+                        row.status === "Active"
+                          ? "border-emerald-500/40 bg-emerald-500/15 text-emerald-300"
+                          : row.status === "Invited"
+                            ? "border-amber-500/40 bg-amber-500/15 text-amber-300"
+                            : "border-red-500/40 bg-red-500/15 text-red-300"
+                      }
+                    >
+                      {row.status}
+                    </Badge>
+                  </td>
+                  <td className="px-2 py-3">
+                    <UserDialog triggerLabel="Edit" defaultUser={row} />
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan={7} className="px-2 py-8 text-center text-slate-400">
+                  No users available from backend.
                 </td>
               </tr>
-            ))}
+            )}
           </tbody>
         </table>
       </div>

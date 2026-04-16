@@ -6,8 +6,8 @@ Parses user questions and executes SQL queries to retrieve real data.
 from __future__ import annotations
 
 import logging
-import re
 from datetime import datetime, timedelta, timezone
+from typing import Any
 
 import psycopg2
 
@@ -55,6 +55,23 @@ def detect_time_range(question: str) -> tuple[datetime, str]:
                 return (now - timedelta(days=30), "last 30 days")
     
     return (now - timedelta(hours=6), "last 6 hours")  # Default
+
+
+def build_response(
+    *,
+    answer: str,
+    status: str,
+    intent: str,
+    data: dict[str, Any] | None,
+    context: dict[str, Any],
+) -> dict[str, Any]:
+    return {
+        "status": status,
+        "intent": intent,
+        "answer": answer,
+        "data": data,
+        "context": context,
+    }
 
 
 def query_latest_value(sensor: str) -> dict:
@@ -161,9 +178,9 @@ def query_anomalies(start_time: datetime) -> dict:
                         max_value,
                         created_at,
                         CASE 
-                            WHEN sensor = 'vibration' AND mean_value > 5.5 THEN 'HIGH'
-                            WHEN sensor = 'temperature' AND mean_value > 80 THEN 'HIGH'
-                            WHEN sensor = 'sound' AND mean_value > 85 THEN 'HIGH'
+                            WHEN sensor = 'vibration' AND mean_value > 10 THEN 'HIGH'
+                            WHEN sensor = 'temperature' AND mean_value > 30 THEN 'HIGH'
+                            WHEN sensor = 'sound' AND mean_value > 4 THEN 'HIGH'
                             ELSE 'NORMAL'
                         END as severity
                     FROM sensor_aggregates
@@ -245,40 +262,87 @@ def query_health_summary() -> dict:
 def answer_question(question: str) -> dict:
     """Main entry point: parse question and execute appropriate query."""
     logger.info(f"Chatbot question: {question}")
-    
+
     # Detect what sensor the question is about
     sensor = detect_sensor(question)
     time_start, time_desc = detect_time_range(question)
-    
+
     # Determine query type from keywords
     q_lower = question.lower()
-    
+
     if any(kw in q_lower for kw in ["current", "latest", "now", "what is", "what's", "how much"]):
         if sensor:
             result = query_latest_value(sensor)
             if result.get("status") == "success":
-                return {
-                    "answer": f"The latest {sensor} reading is {result['value']} {result['unit']} (measured at {result['timestamp']}).",
-                    "data": result,
-                    "context": "queried from sensor_raw_records",
-                }
-        else:
-            return query_health_summary()
-    
-    elif any(kw in q_lower for kw in ["trend", "history", "over", "during", "last"]):
-        if sensor:
-            result = query_trend(sensor, time_start)
-            if result.get("status") == "success":
-                avg_vals = [d["avg"] for d in result["trend_data"]]
-                avg_overall = sum(avg_vals) / len(avg_vals) if avg_vals else 0
-                return {
-                    "answer": f"Over the {time_desc}, {sensor} averaged {round(avg_overall, 2)}, ranging from {min(avg_vals):.2f} to {max(avg_vals):.2f}. Analyzed {result['samples']} time periods.",
-                    "data": result,
-                    "context": "queried from sensor_raw_records aggregated by hour",
-                }
-        else:
-            return query_health_summary()
-    
+                return build_response(
+                    answer=(
+                        f"The latest {sensor} reading is {result['value']} {result['unit']} "
+                        f"(measured at {result['timestamp']})."
+                    ),
+                    status="success",
+                    intent="latest",
+                    data=result,
+                    context={
+                        "query": "latest-sensor",
+                        "table": "sensor_raw_records",
+                        "machine_id": "conveyor-07",
+                        "sensor": sensor,
+                    },
+                )
+            if result.get("status") == "no_data":
+                return build_response(
+                    answer=f"No {sensor} readings are available in the database yet.",
+                    status="no_data",
+                    intent="latest",
+                    data=result,
+                    context={
+                        "query": "latest-sensor",
+                        "table": "sensor_raw_records",
+                        "machine_id": "conveyor-07",
+                        "sensor": sensor,
+                    },
+                )
+            return build_response(
+                answer="I could not read the latest sensor value due to a database error.",
+                status="error",
+                intent="latest",
+                data=result,
+                context={
+                    "query": "latest-sensor",
+                    "table": "sensor_raw_records",
+                    "machine_id": "conveyor-07",
+                    "sensor": sensor,
+                },
+            )
+
+        summary = query_health_summary()
+        if summary.get("status") == "success":
+            sensor_count = len(summary.get("sensors", []))
+            return build_response(
+                answer=f"Database health summary ready for Conveyor-07 across {sensor_count} sensors.",
+                status="success",
+                intent="summary",
+                data=summary,
+                context={
+                    "query": "health-summary",
+                    "table": "sensor_aggregates",
+                    "machine_id": "conveyor-07",
+                    "window": "last 7 days",
+                },
+            )
+        return build_response(
+            answer="I could not build a machine health summary from the database.",
+            status="error",
+            intent="summary",
+            data=summary,
+            context={
+                "query": "health-summary",
+                "table": "sensor_aggregates",
+                "machine_id": "conveyor-07",
+                "window": "last 7 days",
+            },
+        )
+
     elif any(kw in q_lower for kw in ["anomal", "issue", "problem", "alert", "wrong", "abnormal"]):
         result = query_anomalies(time_start)
         if result.get("status") == "success" and result["anomalies_count"] > 0:
@@ -286,21 +350,175 @@ def answer_question(question: str) -> dict:
                 f"{a['sensor']}: {a['value']} {a['unit']} (severity: {a['severity']})"
                 for a in result["anomalies"][:3]
             ])
-            return {
-                "answer": f"Found {result['anomalies_count']} anomalies over {time_desc}: {anomaly_list}",
-                "data": result,
-                "context": "queried from sensor_aggregates with severity thresholds",
-            }
-        else:
-            return {
-                "answer": f"No anomalies detected over {time_desc}. Machine operating normally.",
-                "data": result,
-                "context": "queried from sensor_aggregates",
-            }
-    
+            return build_response(
+                answer=f"Found {result['anomalies_count']} anomalies over {time_desc}: {anomaly_list}",
+                status="success",
+                intent="anomalies",
+                data=result,
+                context={
+                    "query": "anomaly-detection",
+                    "table": "sensor_aggregates",
+                    "machine_id": "conveyor-07",
+                    "window": time_desc,
+                },
+            )
+        if result.get("status") == "success":
+            return build_response(
+                answer=f"No anomalies detected over {time_desc}. Machine operating normally.",
+                status="success",
+                intent="anomalies",
+                data=result,
+                context={
+                    "query": "anomaly-detection",
+                    "table": "sensor_aggregates",
+                    "machine_id": "conveyor-07",
+                    "window": time_desc,
+                },
+            )
+        return build_response(
+            answer="I could not complete anomaly analysis due to a database error.",
+            status="error",
+            intent="anomalies",
+            data=result,
+            context={
+                "query": "anomaly-detection",
+                "table": "sensor_aggregates",
+                "machine_id": "conveyor-07",
+                "window": time_desc,
+            },
+        )
+
+    elif any(kw in q_lower for kw in ["trend", "history", "over", "during", "last"]):
+        if sensor:
+            result = query_trend(sensor, time_start)
+            if result.get("status") == "success":
+                avg_vals = [d["avg"] for d in result["trend_data"]]
+                avg_overall = sum(avg_vals) / len(avg_vals) if avg_vals else 0
+                return build_response(
+                    answer=(
+                        f"Over the {time_desc}, {sensor} averaged {round(avg_overall, 2)}, "
+                        f"ranging from {min(avg_vals):.2f} to {max(avg_vals):.2f}. "
+                        f"Analyzed {result['samples']} time periods."
+                    ),
+                    status="success",
+                    intent="trend",
+                    data=result,
+                    context={
+                        "query": "trend-by-hour",
+                        "table": "sensor_raw_records",
+                        "machine_id": "conveyor-07",
+                        "sensor": sensor,
+                        "window": time_desc,
+                    },
+                )
+            if result.get("status") == "no_data":
+                return build_response(
+                    answer=f"No {sensor} trend data was found for {time_desc}.",
+                    status="no_data",
+                    intent="trend",
+                    data=result,
+                    context={
+                        "query": "trend-by-hour",
+                        "table": "sensor_raw_records",
+                        "machine_id": "conveyor-07",
+                        "sensor": sensor,
+                        "window": time_desc,
+                    },
+                )
+            return build_response(
+                answer=f"I could not retrieve the {sensor} trend due to a database error.",
+                status="error",
+                intent="trend",
+                data=result,
+                context={
+                    "query": "trend-by-hour",
+                    "table": "sensor_raw_records",
+                    "machine_id": "conveyor-07",
+                    "sensor": sensor,
+                    "window": time_desc,
+                },
+            )
+
+        summary = query_health_summary()
+        if summary.get("status") == "success":
+            return build_response(
+                answer="Sensor-specific trend was not specified, so I returned the machine health summary from the database.",
+                status="success",
+                intent="summary",
+                data=summary,
+                context={
+                    "query": "health-summary",
+                    "table": "sensor_aggregates",
+                    "machine_id": "conveyor-07",
+                    "window": "last 7 days",
+                },
+            )
+        return build_response(
+            answer="I could not read summary data from the database.",
+            status="error",
+            intent="summary",
+            data=summary,
+            context={
+                "query": "health-summary",
+                "table": "sensor_aggregates",
+                "machine_id": "conveyor-07",
+                "window": "last 7 days",
+            },
+        )
+
     elif any(kw in q_lower for kw in ["health", "status", "condition", "how is", "okay", "alright"]):
-        return query_health_summary()
-    
+        summary = query_health_summary()
+        if summary.get("status") == "success":
+            sensor_count = len(summary.get("sensors", []))
+            return build_response(
+                answer=f"Machine health summary is available from the last 7 days across {sensor_count} sensors.",
+                status="success",
+                intent="summary",
+                data=summary,
+                context={
+                    "query": "health-summary",
+                    "table": "sensor_aggregates",
+                    "machine_id": "conveyor-07",
+                    "window": "last 7 days",
+                },
+            )
+        return build_response(
+            answer="I could not retrieve machine health summary from the database.",
+            status="error",
+            intent="summary",
+            data=summary,
+            context={
+                "query": "health-summary",
+                "table": "sensor_aggregates",
+                "machine_id": "conveyor-07",
+                "window": "last 7 days",
+            },
+        )
+
     else:
-        # Default: return summary
-        return query_health_summary()
+        summary = query_health_summary()
+        if summary.get("status") == "success":
+            return build_response(
+                answer="I returned a database-backed machine summary. Ask about a specific sensor trend, latest value, or anomalies for more detail.",
+                status="success",
+                intent="summary",
+                data=summary,
+                context={
+                    "query": "health-summary",
+                    "table": "sensor_aggregates",
+                    "machine_id": "conveyor-07",
+                    "window": "last 7 days",
+                },
+            )
+        return build_response(
+            answer="I could not retrieve summary data from the database.",
+            status="error",
+            intent="summary",
+            data=summary,
+            context={
+                "query": "health-summary",
+                "table": "sensor_aggregates",
+                "machine_id": "conveyor-07",
+                "window": "last 7 days",
+            },
+        )

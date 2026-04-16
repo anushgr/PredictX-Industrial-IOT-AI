@@ -12,13 +12,17 @@ export default function LiveMonitoringPage() {
       <Card>
         <h1 className="text-2xl font-semibold text-white">Live Monitoring</h1>
         <p className="mt-2 text-sm text-slate-300">
-          Conveyor-07 telemetry only. Sound, vibration, and temperature are updated from the backend dummy stream.
+          Conveyor-07 telemetry only. Sound, vibration, and temperature are updated from the backend.
         </p>
       </Card>
       <div className="grid gap-4 xl:grid-cols-3">
-        {sensors.map((sensor) => (
-          <SensorCard key={sensor.id} sensor={sensor} />
-        ))}
+        {sensors.length > 0 ? (
+          sensors.map((sensor) => <SensorCard key={sensor.id} sensor={sensor} />)
+        ) : (
+          <Card className="xl:col-span-3 border-slate-800 bg-slate-950/70 p-6 text-slate-300">
+            No live telemetry received from the backend yet.
+          </Card>
+        )}
       </div>
     </div>
   );

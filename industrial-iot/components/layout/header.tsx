@@ -1,8 +1,8 @@
 "use client";
 
-import { Bell, Menu, MoonStar, Search, SunMedium } from "lucide-react";
+import { Bell, Menu, Search, SunMedium } from "lucide-react";
 import { useTheme } from "next-themes";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { usePathname } from "next/navigation";
 import { useDashboardStore } from "@/store/use-dashboard-store";
 import { Button } from "@/components/ui/button";
@@ -16,17 +16,7 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 
-function useClock() {
-  const [now, setNow] = useState<Date>(new Date());
-  useEffect(() => {
-    const id = setInterval(() => setNow(new Date()), 1000);
-    return () => clearInterval(id);
-  }, []);
-  return now;
-}
-
 export function Header() {
-  const now = useClock();
   const pathname = usePathname();
   const { setTheme, resolvedTheme } = useTheme();
   const { setMobileSidebarOpen, plant } = useDashboardStore();
@@ -74,14 +64,10 @@ export function Header() {
             size="icon"
             onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
           >
-            {resolvedTheme === "dark" ? (
-              <SunMedium className="h-4 w-4" />
-            ) : (
-              <MoonStar className="h-4 w-4" />
-            )}
+            <SunMedium className="h-4 w-4" />
           </Button>
           <Badge className="hidden border-slate-700 text-slate-300 md:inline-flex">
-            {now.toLocaleString()}
+            Live
           </Badge>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>

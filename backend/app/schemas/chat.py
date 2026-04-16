@@ -1,4 +1,5 @@
 from pydantic import BaseModel, Field
+from typing import Any
 
 
 class ChatQueryRequest(BaseModel):
@@ -8,4 +9,7 @@ class ChatQueryRequest(BaseModel):
 class ChatQueryResponse(BaseModel):
     answer: str
     source: str
-    context: dict
+    context: dict[str, Any]
+    status: str
+    intent: str
+    data: dict[str, Any] | None = None

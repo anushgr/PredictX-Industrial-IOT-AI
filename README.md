@@ -8,7 +8,7 @@ The frontend is currently focused on a single tracked asset, Conveyor-07, with t
 - Vibration sensor
 - Temperature sensor
 
-The app consumes JWT-protected FastAPI endpoints and reads dummy backend data from the FastAPI service in this repository.
+The app consumes JWT-protected FastAPI endpoints and reads backend data from the FastAPI service in this repository.
 
 ## Features
 
@@ -24,7 +24,7 @@ The app consumes JWT-protected FastAPI endpoints and reads dummy backend data fr
 - `app/` - App Router pages and routes
 - `components/` - Dashboard shell, charts, auth, and UI primitives
 - `hooks/` - React Query data hooks and telemetry hooks
-- `lib/` - Mock data, chart registration, and utilities
+- `lib/` - Chart registration and utilities
 - `services/api.ts` - Axios client and backend API wrappers
 - `store/` - UI state store for sidebar behavior and plant selection
 - `types/` - Shared TypeScript models
@@ -73,5 +73,5 @@ The backend returns a JWT access token, which the frontend stores as `predictx_t
 ## Notes
 
 - The dashboard is intentionally scoped to one machine and three sensors.
-- Analytics and telemetry are backed by dummy JSON in the FastAPI service.
+- Analytics, telemetry, and predictions are backed by the FastAPI service.
 - The frontend is optimized for a dark, industrial SaaS look and responsive layouts.

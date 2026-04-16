@@ -10,13 +10,24 @@ import { useAnalytics } from "@/hooks/use-dashboard-data";
 export default function AnalyticsPage() {
   const { data, isLoading } = useAnalytics();
 
-  if (isLoading || !data) {
+  if (isLoading) {
     return (
       <div className="grid gap-4 lg:grid-cols-2">
         <Skeleton className="h-72" />
         <Skeleton className="h-72" />
         <Skeleton className="h-72 lg:col-span-2" />
       </div>
+    );
+  }
+
+  if (!data?.summary) {
+    return (
+      <Card className="border-slate-800 bg-slate-950/70 p-6 text-slate-300">
+        <h1 className="text-2xl font-semibold text-white">Operational analytics</h1>
+        <p className="mt-2 text-sm text-slate-400">
+          No backend analytics are available yet. Publish telemetry and aggregates first, then reload this page.
+        </p>
+      </Card>
     );
   }
 
@@ -28,7 +39,7 @@ export default function AnalyticsPage() {
             <p className="text-sm text-slate-400">Analytics for Conveyor-07</p>
             <h1 className="mt-2 text-3xl font-semibold text-white">Operational analytics</h1>
             <p className="mt-2 max-w-3xl text-sm text-slate-300">
-              Backend dummy JSON drives this page. It summarizes uptime, temperature, vibration, downtime causes, and maintenance cost for the single monitored machine.
+              Backend data drives this page. It summarizes uptime, temperature, vibration, downtime causes, and maintenance cost for the single monitored machine.
             </p>
           </div>
           <Badge className="border-emerald-500/30 bg-emerald-500/15 text-emerald-300">

@@ -21,9 +21,7 @@ import sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from dl_model.model import AnomalyAutoencoder, HealthScorer
-from dl_model.train_model import (
-    SyntheticDataGenerator, ModelTrainer, features_to_vector
-)
+from dl_model.train_model import SyntheticDataGenerator, ModelTrainer, features_to_vector
 
 
 class PredictionResult:

@@ -28,6 +28,10 @@ class Settings(BaseSettings):
     aggregation_window_size: int = 10
     outlier_iqr_multiplier: float = 1.5
 
+    dl_threshold_temperature: float = 30.0
+    dl_threshold_vibration: float = 10.0
+    dl_threshold_sound: float = 4.0
+
     supabase_url: str = ""
     supabase_key: str = ""
     supabase_table: str = "sensor_aggregates"

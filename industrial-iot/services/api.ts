@@ -16,7 +16,7 @@ api.interceptors.request.use((config) => {
         config.headers.Authorization = `Bearer ${token}`;
       }
     }
-  } catch (e) {
+  } catch {
     // Silently fail if localStorage is not available
   }
   return config;

@@ -21,14 +21,30 @@ CREATE INDEX IF NOT EXISTS idx_machine_predictions_sensor ON machine_predictions
 -- Row-level security
 ALTER TABLE machine_predictions ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "allow_public_read" ON machine_predictions
-    FOR SELECT
-    USING (true);
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies
+        WHERE tablename = 'machine_predictions' AND policyname = 'allow_public_read'
+    ) THEN
+        CREATE POLICY "allow_public_read" ON machine_predictions
+            FOR SELECT USING (true);
+    END IF;
 
-CREATE POLICY "allow_service_write" ON machine_predictions
-    FOR INSERT
-    WITH CHECK (true);
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies
+        WHERE tablename = 'machine_predictions' AND policyname = 'allow_service_write'
+    ) THEN
+        CREATE POLICY "allow_service_write" ON machine_predictions
+            FOR INSERT WITH CHECK (true);
+    END IF;
 
-CREATE POLICY "allow_service_update" ON machine_predictions
-    FOR UPDATE
-    USING (true);
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies
+        WHERE tablename = 'machine_predictions' AND policyname = 'allow_service_update'
+    ) THEN
+        CREATE POLICY "allow_service_update" ON machine_predictions
+            FOR UPDATE USING (true);
+    END IF;
+END
+$$;
